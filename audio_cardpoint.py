@@ -6,8 +6,8 @@
 
 特性：
   * 全部解码与计算在本机完成，不联网、无任何网络请求，音频不出本机。
-  * 两种卡点算法：① Onset 瞬态起音检测（默认，剪辑卡点推荐）② 音量峰值检测
-  * 参数：灵敏度阈值 / 最小卡点间隔 / 全局时间偏移
+  * 三种卡点算法：① Onset 瞬态起音检测（默认，剪辑卡点推荐）② 音量峰值检测 ③ 等间隔卡点（按固定秒数均匀分布）
+  * 参数：灵敏度阈值 / 最小卡点间隔（Onset、峰值）或 间隔秒数（等间隔） / 全局时间偏移
   * 波形预览 + 卡点竖线标记 + 播放试听与时间指针
   * 导出 TXT（每行一个秒数）与 CSV（时间(秒), 时间(毫秒)）
 
@@ -15,7 +15,7 @@
 打包：  双击 build_exe.bat  ->  生成 dist\\音频卡点工具.exe（单文件，免装 Python）
 自检：  音频卡点工具.exe --selftest 音频文件 [--algo onset|peak] [--sensitivity 50]
 
-版本：1.0.0    许可：MIT License    作者：Lyajjyurot
+版本：1.2.0    许可：MIT License    作者：Lyajjyurot
 =================================================================
 """
 import os
@@ -40,14 +40,21 @@ except Exception:
     HAS_AUBIO = False
 
 APP_TITLE = "音频卡点工具"
-__version__ = "1.0.0"
+__version__ = "1.2.0"
 ALGO_ONSET = "onset"
 ALGO_PEAK = "peak"
+ALGO_INTERVAL = "interval"
 ALGO_LABELS = [
     "① Onset 瞬态起音检测（推荐）",
     "② 音量峰值检测",
+    "③ 等间隔卡点（按固定秒数均匀分布）",
 ]
-ALGO_BY_LABEL = {ALGO_LABELS[0]: ALGO_ONSET, ALGO_LABELS[1]: ALGO_PEAK}
+ALGO_BY_LABEL = {
+    ALGO_LABELS[0]: ALGO_ONSET,
+    ALGO_LABELS[1]: ALGO_PEAK,
+    ALGO_LABELS[2]: ALGO_INTERVAL,
+}
+ALGO_DEFAULT_INTERVAL = 1.0     # 等间隔模式默认间隔（秒）
 
 WIN = 1024        # 起音检测分析窗长（样本），与 aubio 默认一致
 HOP = 512         # 帧移
@@ -267,7 +274,21 @@ def peaks_builtin(y, sr, sensitivity):
     return times, env[idx]
 
 
-def analyze(pcm, sr, algo, sensitivity, min_gap_s, offset_ms):
+def interval_marks(duration, interval_s):
+    """③ 等间隔卡点：从 0 秒起每隔 interval_s 秒放一个卡点，直到音频结尾。
+
+    用于需要"均匀踩点"的场景（如卡点视频固定节奏、转场定时）。
+    间隔秒数由用户设定（默认 1.0 秒）。
+    """
+    if duration <= 0 or interval_s <= 0:
+        return []
+    n = int(duration // interval_s)
+    times = [i * interval_s for i in range(n + 1)]
+    # 去掉可能因浮点误差略超过结尾的点
+    return [t for t in times if t <= duration + 1e-9]
+
+
+def analyze(pcm, sr, algo, sensitivity, min_gap_s, offset_ms, interval_s=None):
     """返回 (卡点秒数列表, 引擎名)"""
     y = pcm.astype(np.float32) / 32768.0
     duration = pcm.size / float(sr)
@@ -279,10 +300,18 @@ def analyze(pcm, sr, algo, sensitivity, min_gap_s, offset_ms):
             times, _ = onsets_builtin(y, sr, sensitivity)
             engine = "内置 SpectralFlux（等效 aubio）"
         times = _min_gap_sequential(times, min_gap_s)
-    else:
+    elif algo == ALGO_PEAK:
         times, strength = peaks_builtin(y, sr, sensitivity)
         times = _min_gap_strength(times, strength, min_gap_s)
         engine = "内置 振幅包络峰值"
+    elif algo == ALGO_INTERVAL:
+        iv = interval_s if interval_s and interval_s > 0 else ALGO_DEFAULT_INTERVAL
+        times = interval_marks(duration, iv)
+        engine = "等间隔（每 %.2fs 一个）" % iv
+    else:
+        times, _ = onsets_builtin(y, sr, sensitivity)
+        times = _min_gap_sequential(times, min_gap_s)
+        engine = "内置 SpectralFlux（等效 aubio）"
     return _apply_offset(times, offset_ms, duration), engine
 
 
@@ -454,11 +483,22 @@ class App:
         ttk.Label(row1, text="卡点算法：").pack(side="left")
         self.algo_var = tk.StringVar(value=ALGO_LABELS[0])
         self.algo_cb = ttk.Combobox(row1, textvariable=self.algo_var, state="readonly",
-                                    width=30, values=ALGO_LABELS)
+                                    width=32, values=ALGO_LABELS)
         self.algo_cb.pack(side="left")
-        ttk.Label(row1, text="  最小卡点间隔(秒)：").pack(side="left")
+        self.algo_cb.bind("<<ComboboxSelected>>", lambda e: self._refresh_params())
+
+        # 最小卡点间隔（Onset / 峰值模式用）
+        self.gap_group = ttk.Frame(row1)
+        ttk.Label(self.gap_group, text="  最小卡点间隔(秒)：").pack(side="left")
         self.gap_var = tk.StringVar(value="0.15")
-        ttk.Entry(row1, textvariable=self.gap_var, width=7).pack(side="left")
+        ttk.Entry(self.gap_group, textvariable=self.gap_var, width=7).pack(side="left")
+
+        # 间隔秒数（等间隔模式用）
+        self.interval_group = ttk.Frame(row1)
+        ttk.Label(self.interval_group, text="  间隔秒数(秒)：").pack(side="left")
+        self.interval_var = tk.StringVar(value="%.1f" % ALGO_DEFAULT_INTERVAL)
+        ttk.Entry(self.interval_group, textvariable=self.interval_var, width=7).pack(side="left")
+
         ttk.Label(row1, text="  全局时间偏移(毫秒，正数向后 / 负数向前)：").pack(side="left")
         self.off_var = tk.StringVar(value="0")
         ttk.Entry(row1, textvariable=self.off_var, width=7).pack(side="left")
@@ -468,9 +508,10 @@ class App:
         self.row2 = row2
         ttk.Label(row2, text="灵敏度阈值（越大卡点越少，越小越细）：").pack(side="left")
         self.sens_var = tk.IntVar(value=50)
-        tk.Scale(row2, from_=0, to=100, orient="horizontal", variable=self.sens_var,
+        self.sens_scale = tk.Scale(row2, from_=0, to=100, orient="horizontal", variable=self.sens_var,
                  length=190, showvalue=True, resolution=1, sliderlength=14,
-                 width=12, highlightthickness=0).pack(side="left", padx=(0, 14))
+                 width=12, highlightthickness=0)
+        self.sens_scale.pack(side="left", padx=(0, 14))
         ttk.Button(row2, text="分析音频", command=self.run_analysis).pack(side="left")
         ttk.Button(row2, text="清空卡点", command=self.clear_marks).pack(side="left", padx=6)
 
@@ -499,19 +540,52 @@ class App:
         self.status = ttk.Label(exp, text="就绪", foreground="#555555")
         self.status.pack(side="left", padx=10)
 
+        # 根据当前所选算法，显示对应参数控件
+        self._refresh_params()
+
     # ---------- 参数读取 ----------
     def _params(self):
+        algo = ALGO_BY_LABEL.get(self.algo_var.get(), ALGO_ONSET)
+        try:
+            off = float(self.off_var.get())
+        except ValueError:
+            off = 0.0
+            self.off_var.set("0")
+        try:
+            sens = int(self.sens_var.get())
+        except ValueError:
+            sens = 50
         try:
             gap = max(0.0, float(self.gap_var.get()))
         except ValueError:
             gap = 0.15
             self.gap_var.set("0.15")
         try:
-            off = float(self.off_var.get())
+            interval = max(1e-3, float(self.interval_var.get()))
         except ValueError:
-            off = 0.0
-            self.off_var.set("0")
-        return int(self.sens_var.get()), gap, off
+            interval = ALGO_DEFAULT_INTERVAL
+            self.interval_var.set("%.1f" % ALGO_DEFAULT_INTERVAL)
+        return algo, sens, gap, off, interval
+
+    # ---------- 参数控件随算法切换 ----------
+    def _refresh_params(self):
+        algo = ALGO_BY_LABEL.get(self.algo_var.get(), ALGO_ONSET)
+        if algo == ALGO_INTERVAL:
+            # 等间隔模式：显示"间隔秒数"，禁用灵敏度
+            self.gap_group.pack_forget()
+            self.interval_group.pack(side="left")
+            self.sens_scale.config(state="disabled")
+        else:
+            # Onset / 峰值模式：显示"最小卡点间隔"，启用灵敏度
+            self.interval_group.pack_forget()
+            self.gap_group.pack(side="left")
+            self.sens_scale.config(state="normal")
+        # 不同算法需要的参数宽度不同，按当前内容重新约束窗口最小宽度
+        self.root.update_idletasks()
+        need = int(self.box.winfo_reqwidth()) + 26
+        self.root.minsize(need, 500)
+        if self.root.winfo_width() < need:
+            self.root.geometry("%dx%d" % (need, self.root.winfo_height()))
 
     # ---------- 文件 ----------
     def choose_file(self):
@@ -573,14 +647,13 @@ class App:
         if self.pcm is None:
             messagebox.showinfo(APP_TITLE, "请先选择音频文件")
             return
-        algo = ALGO_BY_LABEL.get(self.algo_var.get(), ALGO_ONSET)
-        sens, gap, off = self._params()
+        algo, sens, gap, off, interval = self._params()
         self.stop_play()
         self.root.config(cursor="watch")
         self.status.config(text="正在分析卡点…")
         self.root.update_idletasks()
         try:
-            marks, engine = analyze(self.pcm, self.sr, algo, sens, gap, off)
+            marks, engine = analyze(self.pcm, self.sr, algo, sens, gap, off, interval)
         except Exception as e:
             self.root.config(cursor="")
             messagebox.showerror(APP_TITLE, "分析失败：\n%s" % e)
@@ -596,6 +669,9 @@ class App:
         if marks:
             self.status.config(text="分析完成 ｜ 引擎：%s ｜ 首个卡点 %s ｜ 末个卡点 %s"
                                     % (engine, fmt_time(marks[0]), fmt_time(marks[-1])))
+        elif algo == ALGO_INTERVAL:
+            self.status.config(text="分析完成 ｜ 引擎：%s ｜ 音频时长不足以生成间隔卡点，"
+                                    "可减小间隔秒数" % engine)
         else:
             self.status.config(text="分析完成 ｜ 引擎：%s ｜ 没有识别到卡点，"
                                     "可调小灵敏度阈值或调小最小间隔" % engine)
@@ -764,27 +840,30 @@ class App:
 # ----------------------------------------------------------------------
 def selftest(args):
     if not args:
-        print("用法: --selftest <音频文件> [--algo onset|peak] [--sensitivity 50] "
-              "[--min-gap 0.15] [--offset 0]")
+        print("用法: --selftest <音频文件> [--algo onset|peak|interval] "
+              "[--sensitivity 50] [--min-gap 0.15] [--interval 1.0] [--offset 0]")
         return 2
     path = args[0]
-    algo, sens, gap, off = ALGO_ONSET, 50, 0.15, 0.0
+    algo, sens, gap, off, interval = ALGO_ONSET, 50, 0.15, 0.0, ALGO_DEFAULT_INTERVAL
     for i, a in enumerate(args):
         if a == "--algo" and i + 1 < len(args):
-            algo = ALGO_PEAK if args[i + 1] == "peak" else ALGO_ONSET
+            v = args[i + 1]
+            algo = ALGO_PEAK if v == "peak" else (ALGO_INTERVAL if v == "interval" else ALGO_ONSET)
         elif a == "--sensitivity" and i + 1 < len(args):
             sens = int(args[i + 1])
         elif a == "--min-gap" and i + 1 < len(args):
             gap = float(args[i + 1])
+        elif a == "--interval" and i + 1 < len(args):
+            interval = float(args[i + 1])
         elif a == "--offset" and i + 1 < len(args):
             off = float(args[i + 1])
     pcm, sr = load_audio(path)
     dur = pcm.size / float(sr)
-    marks, engine = analyze(pcm, sr, algo, sens, gap, off)
+    marks, engine = analyze(pcm, sr, algo, sens, gap, off, interval)
     lines = [
         "文件: %s" % path,
         "采样率: %d Hz  时长: %.3f s  算法: %s  引擎: %s" % (sr, dur, algo, engine),
-        "灵敏度: %d  最小间隔: %.3fs  偏移: %.1f ms" % (sens, gap, off),
+        "灵敏度: %d  最小间隔: %.3fs  间隔: %.3fs  偏移: %.1f ms" % (sens, gap, interval, off),
         "卡点数量: %d" % len(marks),
         "前 20 个卡点(秒): %s" % ", ".join("%.3f" % t for t in marks[:20]),
     ]
@@ -806,9 +885,10 @@ def main():
         print("用法: audio_cardpoint.py [选项]\n"
               "  （不带参数）              启动图形界面\n"
               "  --selftest <音频文件>     命令行自检，打印卡点时间\n"
-              "      --algo onset|peak     卡点算法，默认 onset\n"
-              "      --sensitivity 0-100   灵敏度阈值，默认 50\n"
-              "      --min-gap 秒          最小卡点间隔，默认 0.15\n"
+              "      --algo onset|peak|interval   卡点算法，默认 onset\n"
+              "      --sensitivity 0-100   灵敏度阈值（Onset/峰值），默认 50\n"
+              "      --min-gap 秒          最小卡点间隔（Onset/峰值），默认 0.15\n"
+              "      --interval 秒         间隔秒数（等间隔），默认 1.0\n"
               "      --offset 毫秒         全局时间偏移，默认 0\n"
               "  --version                 显示版本号")
         return

@@ -79,7 +79,21 @@ Python + Tkinter 写的，依赖极少（numpy + miniaudio），可打包成**�
 
 ## 从源码运行
 
-需要 Python 3.8+。
+> 直接跑源码**不需要打包**：`audio_cardpoint.py` 本身就是完整程序，改完代码重新运行就生效。
+> 打包成 exe 只是为了让**没装 Python 的人**也能用，或者方便分发。
+
+### 方式一：双击 `run_source.bat`（Windows 最省事）
+
+第一次运行会自动创建 `.venv` 虚拟环境并安装依赖（需要已装 Python 3.8+），之后每次双击就直接打开界面。
+
+想用命令行功能也可以直接传参数：
+
+```bat
+run_source.bat --version
+run_source.bat --selftest 音频文件.mp3 --algo peak --sensitivity 60
+```
+
+### 方式二：手动命令行
 
 ```bash
 git clone <本仓库地址>
@@ -93,6 +107,12 @@ source .venv/bin/activate
 
 pip install -r requirements.txt
 python audio_cardpoint.py
+```
+
+装依赖慢的话可以换国内源：
+
+```bash
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 ## 命令行自检（不开界面）

@@ -1,6 +1,6 @@
 # BeatMark
 
-> 给剪辑找卡点的本地小工具：导入音频 → 自动识别鼓点/重音位置 → 导出时间戳，直接粘进剪映、PR、AE 对轨。
+> 给剪辑找卡点的本地小工具：导入音频 → 自动识别鼓点/重音位置 → 导出时间戳
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.8%2B-3776ab.svg)](https://www.python.org/)

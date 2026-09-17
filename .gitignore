@@ -1,0 +1,34 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# ---- PyInstaller 构建产物 ----
+build/
+/dist/
+/dist2/
+/dist3/
+_build*/
+_w*/
+_c*/
+*.spec.bak
+
+# ---- 调试 / 测试临时文件 ----
+_probe/
+selftest_result.txt
+*.log
+out.txt
+out.csv
+
+# ---- 编辑器 / 系统 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- 本地工具目录 ----
+.workbuddy/

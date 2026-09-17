@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 """
-打包脚本：把 audio_cardpoint.py 打成 exe（免安装 Python，双击即用）
+打包脚本：把 beatmark.py 打成 exe（免安装 Python，双击即用）
 
 产出：
-  1. dist\\音频卡点工具.exe                 单文件版（一个文件搞定，要求的交付格式）
-  2. dist\\音频卡点工具\\音频卡点工具.exe     文件夹版（启动最快，日常推荐；整个文件夹一起拷走）
+  1. dist\\BeatMark.exe                 单文件版（一个文件搞定，要求的交付格式）
+  2. dist\\BeatMark\\BeatMark.exe       文件夹版（启动最快，日常推荐；整个文件夹一起拷走）
 
 用法：双击 build_exe.bat，或在本目录执行  python build_exe.py
      只打包其中一个：  python build_exe.py onefile     /     python build_exe.py onedir
 
-打包细节（含 Tcl 无用数据的裁剪）在 audio_cardpoint.spec 里配置。
+打包细节（含 Tcl 无用数据的裁剪）在 beatmark.spec 里配置。
 """
 import os
 import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SPEC = os.path.join(HERE, "audio_cardpoint.spec")
+SPEC = os.path.join(HERE, "beatmark.spec")
 APP = "BeatMark"
 
 # 可用环境变量覆盖，默认就是下面的标准路径

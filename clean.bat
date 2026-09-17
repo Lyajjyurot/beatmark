@@ -1,7 +1,7 @@
 @echo off
 rem ---------------------------------------------------------------
 rem  Remove build caches and development scratch folders.
-rem  Keeps: dist\ audio_cardpoint.py audio_cardpoint.spec build_exe.*
+rem  Keeps: dist\ beatmark.py beatmark.spec build_exe.*
 rem ---------------------------------------------------------------
 setlocal
 cd /d "%~dp0"

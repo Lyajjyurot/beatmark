@@ -882,7 +882,7 @@ def main():
         print("%s %s" % (APP_TITLE, __version__))
         return
     if "--help" in sys.argv or "-h" in sys.argv:
-        print("用法: audio_cardpoint.py [选项]\n"
+        print("用法: beatmark.py [选项]\n"
               "  （不带参数）              启动图形界面\n"
               "  --selftest <音频文件>     命令行自检，打印卡点时间\n"
               "      --algo onset|peak|interval   卡点算法，默认 onset\n"

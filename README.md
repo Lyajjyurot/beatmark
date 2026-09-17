@@ -7,7 +7,7 @@
 [![Platform](https://img.shields.io/badge/Platform-Windows-lightgrey.svg)](#下载使用)
 [![No Network](https://img.shields.io/badge/%E7%BD%91%E7%BB%9C-%E5%AE%8C%E5%85%A8%E7%A6%BB%E7%BA%BF-success.svg)](#隐私与安全)
 
-Python + Tkinter 写的，依赖极少（numpy + miniaudio），可打包成**单文件 exe**，目标机器不需要装 Python 和任何依赖库。
+Python + Tkinter ，依赖极少（numpy + miniaudio）
 
 ![界面示意](screenshots/ui-preview.svg)
 
@@ -47,17 +47,6 @@ Python + Tkinter 写的，依赖极少（numpy + miniaudio），可打包成**�
 | 间隔秒数 | > 0 秒 | 1.0 | 等间隔模式下两个卡点的间距（③ 使用） | 想要每 0.5 秒一个卡点 → 填 0.5；想要 2 秒一个 → 填 2 |
 | 全局时间偏移 | 毫秒（可正可负） | 0 | 所有卡点统一向后（正）/ 向前（负）平移 | 卡点整体比画面早或晚一点点时，用它整体补偿 |
 
-## 两种算法的实测表现
-
-用 120BPM 鼓点 + 持续长音（pad）+ 纯长音的合成音频做过量化验证：
-
-| 场景 | Onset 瞬态起音 | 音量峰值 |
-| --- | --- | --- |
-| 120BPM 鼓点 17 下 | 17/17 全部命中，误差 < 5ms | 17/17 命中，但比真实起始点晚约 8~25ms |
-| 纯持续长音（无鼓点） | **0 个误报** | 会产生多余标记（算法固有特性） |
-| 主歌（持续人声）+ 副歌（120BPM 鼓点） | 副歌 12/12 命中，主歌 0 误报 | 副歌 12/12 命中 |
-
-结论：**要卡得准就用 ①**；② 只适合快速定位"哪里最响"。
 
 ## 导出格式
 
@@ -84,7 +73,7 @@ Python + Tkinter 写的，依赖极少（numpy + miniaudio），可打包成**�
 > 直接跑源码**不需要打包**：`beatmark.py` 本身就是完整程序，改完代码重新运行就生效。
 > 打包成 exe 只是为了让**没装 Python 的人**也能用，或者方便分发。
 
-### 方式一：双击 `run_source.bat`（Windows 最省事）
+### 双击 `run_source.bat`
 
 第一次运行会自动创建 `.venv` 虚拟环境并安装依赖（需要已装 Python 3.8+），之后每次双击就直接打开界面。
 
@@ -96,27 +85,8 @@ run_source.bat --selftest 音频文件.mp3 --algo peak --sensitivity 60
 run_source.bat --selftest 音频文件.mp3 --algo interval --interval 0.5
 ```
 
-### 方式二：手动命令行
-
-```bash
-git clone <本仓库地址>
-cd <仓库目录>
-
-python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# macOS / Linux
-source .venv/bin/activate
-
-pip install -r requirements.txt
-python beatmark.py
 ```
 
-装依赖慢的话可以换国内源：
-
-```bash
-pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-```
 
 ## 命令行自检（不开界面）
 
@@ -139,50 +109,6 @@ python beatmark.py --version
 前 20 个卡点(秒): 6.002, 6.502, 7.001, 7.500, ...
 ```
 
-## 自己打包 exe
-
-```bash
-pip install pyinstaller
-# 双击 build_exe.bat，或：
-python build_exe.py
-```
-
-产物：
-
-- `dist\BeatMark.exe` —— 单文件版，一个文件走天下
-- `dist\BeatMark\BeatMark.exe` —— 文件夹版，启动快（推荐日常使用）
-
-打包配置在 `beatmark.spec`。里面做了一件重要的事：把 Tcl 的时区数据（`tzdata`）和多语言提示（`msgs`）从打包内容里剔除——这三个目录占了 700 多个文件，而本工具完全用不到。单文件 exe 的启动耗时和"打包进去的文件数量"基本成正比（在本机实测每个文件约 40ms），裁剪后单文件版启动时间从 84 秒降到约 16 秒，文件夹版始终在 1 秒左右。
-
-## 常见问题
-
-**播放没声音 / 提示音频设备不可用？**
-程序用的是系统默认输出设备（miniaudio / WASAPI）。检查系统输出设备是否正常、是否被其他软件独占；不播放也不影响分析与导出。
-
-**Q: 为什么没有用 aubio？**
-项目原本就是按 aubio 的算法设计的。但 aubio 在 PyPI 上**没有 Windows 预编译包**（官方只提供 conda 渠道），没有 C 编译器就无法安装和打包，所以内置了一个按 aubio 默认检测器思路实现的等效版本：相对谱通量（spectral flux）+ 自适应中值阈值 + 局部极大值，参数与 aubio 默认一致（Hann 窗 1024、帧移 512）。如果你本机装了 aubio（`conda install -c conda-forge aubio`），程序会自动优先调用 `aubio.onset("default")`，不需要改代码。
-
-**Q: 音频会上传到网上吗？**
-不会。全部解码和分析都在本机完成，代码里没有任何网络请求，断网也能正常用。测试时可以自己断网验证。
-
-**Q: 支持哪些格式？**
-miniaudio 支持的都能读：MP3、WAV、FLAC、OGG 等。视频文件里的音轨请先提取成音频再导入。
-
-## 目录结构
-
-```
-.
-├─ beatmark.py              主程序（单文件，约 800 行）
-├─ beatmark.spec            PyInstaller 打包配置（含资源裁剪）
-├─ build_exe.py             打包脚本
-├─ build_exe.bat            双击打包
-├─ requirements.txt         运行依赖
-├─ screenshots/             README 用的界面示意图
-├─ LICENSE
-├─ CHANGELOG.md
-├─ CONTRIBUTING.md
-└─ SECURITY.md
-```
 
 ## 技术栈
 
@@ -199,7 +125,6 @@ miniaudio 支持的都能读：MP3、WAV、FLAC、OGG 等。视频文件里的�
 
 欢迎提 Issue 和 PR。详情请查看 [贡献指南](CONTRIBUTING.md)。
 
-改算法或参数映射的话，建议先用 `--selftest` 跑一遍上面的三类测试音频（精确节拍、纯长音、主歌+副歌），确认命中率和误报没有变差。
 
 ## 安全
 

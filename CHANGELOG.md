@@ -2,6 +2,20 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.3.0] - 2026-09-17
+
+### 变更
+
+- **项目重命名**：从「音频卡点工具」更名为「BeatMark」。
+  - 主程序文件：`audio_cardpoint.py` → `beatmark.py`
+  - 打包配置：`audio_cardpoint.spec` → `beatmark.spec`
+  - 产物名称：`音频卡点工具.exe` → `BeatMark.exe`
+
+### 新增
+
+- `CONTRIBUTING.md` 贡献指南。
+- `SECURITY.md` 安全策略。
+
 ## [1.2.0] - 2026-09-17
 
 ### 新增

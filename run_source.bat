@@ -1,6 +1,6 @@
 @echo off
 rem ---------------------------------------------------------------------
-rem  Run the tool directly from source (no packaging needed).
+rem  Run BeatMark directly from source (no packaging needed).
 rem  First run: creates .venv and installs numpy + miniaudio automatically.
 rem  Usage: double-click, or:  run_source.bat --selftest song.mp3
 rem ---------------------------------------------------------------------
@@ -40,8 +40,8 @@ if errorlevel 1 (
     )
 )
 
-echo [3/3] Starting audio_cardpoint.py ...
-"%PY%" audio_cardpoint.py %*
+echo [3/3] Starting beatmark.py ...
+"%PY%" beatmark.py %*
 if errorlevel 1 (
     echo.
     echo   The program exited with an error, see the message above.

@@ -17,7 +17,7 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SPEC = os.path.join(HERE, "audio_cardpoint.spec")
-APP = "音频卡点工具"
+APP = "BeatMark"
 
 # 可用环境变量覆盖，默认就是下面的标准路径
 DIST = os.environ.get("BEAT_DIST", os.path.join(HERE, "dist"))

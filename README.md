@@ -1,4 +1,4 @@
-# 音频卡点工具
+# BeatMark
 
 > 给剪辑找卡点的本地小工具：导入音频 → 自动识别鼓点/重音位置 → 导出时间戳，直接粘进剪映、PR、AE 对轨。
 
@@ -24,10 +24,10 @@ Python + Tkinter 写的，依赖极少（numpy + miniaudio），可打包成**�
 
 ## 下载使用
 
-到 [Releases](../../releases) 下载 `音频卡点工具.exe`，双击运行即可，**不需要安装 Python 和任何依赖库**。
+到 [Releases](../../releases) 下载 `BeatMark.exe`，双击运行即可，**不需要安装 Python 和任何依赖库**。
 
 > - 首次运行 Windows 可能提示"已保护你的电脑/未知发布者"，点"更多信息 → 仍要运行"即可（PyInstaller 打包的 exe 没有代码签名，属于正常现象）。
-> - 单文件 exe 每次启动都要先把自身解包到临时目录，文件越多启动越慢。本项目已经裁掉了用不到的资源，但如果你的机器杀软较严格，首次启动仍可能需要十几秒；想快的话可以用自源码打包出的**文件夹版**（同目录下的 `dist\音频卡点工具\`），启动通常在 1 秒内。
+> - 单文件 exe 每次启动都要先把自身解包到临时目录，文件越多启动越慢。本项目已经裁掉了用不到的资源，但如果你的机器杀软较严格，首次启动仍可能需要十几秒；想快的话可以用自源码打包出的**文件夹版**（同目录下的 `dist\BeatMark\`），启动通常在 1 秒内。
 
 ## 使用流程
 
@@ -81,7 +81,7 @@ Python + Tkinter 写的，依赖极少（numpy + miniaudio），可打包成**�
 
 ## 从源码运行
 
-> 直接跑源码**不需要打包**：`audio_cardpoint.py` 本身就是完整程序，改完代码重新运行就生效。
+> 直接跑源码**不需要打包**：`beatmark.py` 本身就是完整程序，改完代码重新运行就生效。
 > 打包成 exe 只是为了让**没装 Python 的人**也能用，或者方便分发。
 
 ### 方式一：双击 `run_source.bat`（Windows 最省事）
@@ -109,7 +109,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -r requirements.txt
-python audio_cardpoint.py
+python beatmark.py
 ```
 
 装依赖慢的话可以换国内源：
@@ -123,10 +123,10 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 改完算法或打包后，用自检模式快速验证结果是否正确：
 
 ```bash
-python audio_cardpoint.py --selftest 音频文件.mp3
-python audio_cardpoint.py --selftest 音频文件.mp3 --algo peak --sensitivity 60 --min-gap 0.2 --offset 30
-python audio_cardpoint.py --selftest 音频文件.mp3 --algo interval --interval 0.5
-python audio_cardpoint.py --version
+python beatmark.py --selftest 音频文件.mp3
+python beatmark.py --selftest 音频文件.mp3 --algo peak --sensitivity 60 --min-gap 0.2 --offset 30
+python beatmark.py --selftest 音频文件.mp3 --algo interval --interval 0.5
+python beatmark.py --version
 ```
 
 输出示例：
@@ -149,10 +149,10 @@ python build_exe.py
 
 产物：
 
-- `dist\音频卡点工具.exe` —— 单文件版，一个文件走天下
-- `dist\音频卡点工具\音频卡点工具.exe` —— 文件夹版，启动快（推荐日常使用）
+- `dist\BeatMark.exe` —— 单文件版，一个文件走天下
+- `dist\BeatMark\BeatMark.exe` —— 文件夹版，启动快（推荐日常使用）
 
-打包配置在 `audio_cardpoint.spec`。里面做了一件重要的事：把 Tcl 的时区数据（`tzdata`）和多语言提示（`msgs`）从打包内容里剔除——这三个目录占了 700 多个文件，而本工具完全用不到。单文件 exe 的启动耗时和"打包进去的文件数量"基本成正比（在本机实测每个文件约 40ms），裁剪后单文件版启动时间从 84 秒降到约 16 秒，文件夹版始终在 1 秒左右。
+打包配置在 `beatmark.spec`。里面做了一件重要的事：把 Tcl 的时区数据（`tzdata`）和多语言提示（`msgs`）从打包内容里剔除——这三个目录占了 700 多个文件，而本工具完全用不到。单文件 exe 的启动耗时和"打包进去的文件数量"基本成正比（在本机实测每个文件约 40ms），裁剪后单文件版启动时间从 84 秒降到约 16 秒，文件夹版始终在 1 秒左右。
 
 ## 常见问题
 
@@ -172,14 +172,16 @@ miniaudio 支持的都能读：MP3、WAV、FLAC、OGG 等。视频文件里的�
 
 ```
 .
-├─ audio_cardpoint.py      主程序（单文件，约 800 行）
-├─ audio_cardpoint.spec    PyInstaller 打包配置（含资源裁剪）
-├─ build_exe.py            打包脚本
-├─ build_exe.bat           双击打包
-├─ requirements.txt        运行依赖
-├─ screenshots/            README 用的界面示意图
+├─ beatmark.py              主程序（单文件，约 800 行）
+├─ beatmark.spec            PyInstaller 打包配置（含资源裁剪）
+├─ build_exe.py             打包脚本
+├─ build_exe.bat            双击打包
+├─ requirements.txt         运行依赖
+├─ screenshots/             README 用的界面示意图
 ├─ LICENSE
-└─ CHANGELOG.md
+├─ CHANGELOG.md
+├─ CONTRIBUTING.md
+└─ SECURITY.md
 ```
 
 ## 技术栈

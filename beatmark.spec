@@ -12,7 +12,7 @@ PyInstaller 打包配置（build_exe.py 会自动调用本文件，一般不用�
 """
 import os
 
-APP = "音频卡点工具"
+APP = "BeatMark"
 MODE = os.environ.get("BEAT_MODE", "onefile")
 ROOT = os.path.dirname(os.path.abspath(SPEC))          # noqa: F821  (SPEC 由 PyInstaller 注入)
 
@@ -21,7 +21,7 @@ DROP_PARTS = ("/tzdata/", "/msgs/")
 KEEP_NAMES = ("encoding",)
 
 a = Analysis(                                          # noqa: F821
-    [os.path.join(ROOT, "audio_cardpoint.py")],
+    [os.path.join(ROOT, "beatmark.py")],
     pathex=[ROOT],
     binaries=[],
     datas=[],

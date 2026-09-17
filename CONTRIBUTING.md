@@ -1,6 +1,6 @@
 # 贡献指南
 
-感谢你对音频卡点工具的关注！欢迎提交 Issue 和 Pull Request。
+感谢你对 BeatMark 的关注！欢迎提交 Issue 和 Pull Request。
 
 ## 如何贡献
 
@@ -30,7 +30,7 @@
 
 ```bash
 git clone <你的 Fork 地址>
-cd 卡点工具
+cd beatmark
 
 python -m venv .venv
 # Windows
@@ -39,7 +39,7 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -r requirements.txt
-python audio_cardpoint.py
+python beatmark.py
 ```
 
 ## 代码规范
@@ -59,13 +59,13 @@ python audio_cardpoint.py
 
 ```bash
 # 120BPM 鼓点测试（应全部命中）
-python audio_cardpoint.py --selftest test_120bpm.mp3
+python beatmark.py --selftest test_120bpm.mp3
 
 # 纯长音测试（应 0 个误报）
-python audio_cardpoint.py --selftest test_pad.mp3
+python beatmark.py --selftest test_pad.mp3
 
 # 主歌+副歌测试（副歌命中，主歌 0 误报）
-python audio_cardpoint.py --selftest test_vocal.mp3
+python beatmark.py --selftest test_vocal.mp3
 ```
 
 ## 许可

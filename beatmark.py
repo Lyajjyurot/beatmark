@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-音频卡点工具（纯本地离线版）
+BeatMark - 音频卡点工具（纯本地离线版）
 =================================================================
 用途：给剪辑找卡点。导入音频 -> 选算法 -> 调参数 -> 分析 -> 试听 -> 导出时间戳。
 
@@ -11,11 +11,11 @@
   * 波形预览 + 卡点竖线标记 + 播放试听与时间指针
   * 导出 TXT（每行一个秒数）与 CSV（时间(秒), 时间(毫秒)）
 
-运行：  python audio_cardpoint.py
-打包：  双击 build_exe.bat  ->  生成 dist\\音频卡点工具.exe（单文件，免装 Python）
-自检：  音频卡点工具.exe --selftest 音频文件 [--algo onset|peak] [--sensitivity 50]
+运行：  python beatmark.py
+打包：  双击 build_exe.bat  ->  生成 dist\\BeatMark.exe（单文件，免装 Python）
+自检：  BeatMark.exe --selftest 音频文件 [--algo onset|peak] [--sensitivity 50]
 
-版本：1.2.0    许可：MIT License    作者：Lyajjyurot
+版本：1.3.0    许可：MIT License    作者：Lyajjyurot
 =================================================================
 """
 import os
@@ -39,8 +39,8 @@ try:
 except Exception:
     HAS_AUBIO = False
 
-APP_TITLE = "音频卡点工具"
-__version__ = "1.2.0"
+APP_TITLE = "BeatMark"
+__version__ = "1.3.0"
 ALGO_ONSET = "onset"
 ALGO_PEAK = "peak"
 ALGO_INTERVAL = "interval"

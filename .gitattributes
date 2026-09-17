@@ -1,0 +1,13 @@
+# 统一换行符，避免不同系统 clone 后出现"整个文件都改了"
+* text=auto eol=lf
+*.py    text eol=lf
+*.md    text eol=lf
+*.svg   text eol=lf
+*.spec  text eol=lf
+*.txt   text eol=lf
+# Windows 批处理必须是 CRLF，否则可能执行异常
+*.bat   text eol=crlf
+# 二进制
+*.exe   binary
+*.png   binary
+*.ico   binary

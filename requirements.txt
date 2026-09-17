@@ -1,0 +1,10 @@
+# 运行依赖（全部本地运行，无任何网络请求）
+numpy>=1.20
+miniaudio>=1.57
+
+# 可选：本机若已安装 aubio，程序会自动改用 aubio 的起音检测（detect = "aubio"）。
+# Windows 上没有 pip wheel，只能用 conda 安装：conda install -c conda-forge aubio
+# aubio>=0.4.9
+
+# 打包 exe 时另需（见 README「自己打包 exe」）：
+# pyinstaller>=6.0

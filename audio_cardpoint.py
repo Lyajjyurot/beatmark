@@ -240,6 +240,10 @@ def peaks_builtin(y, sr, sensitivity):
     """② 音量峰值检测：振幅包络局部极大值，用于找高潮/响度位置
 
     注意：包络需要平滑，卡点位置会比重音起始点轻微滞后；持续长音容易产生多余标记。
+
+    标记规则（v1.1 修改）：【不标记峰值本身】；改用峰值时刻前两帧进行标点
+    —— 帧率按 30fps 计（每帧 1/30 秒），即 标记时刻 = 峰值时刻 - 2/30 秒，
+    使卡点对齐到打击/起音到来前的位置，更贴合剪辑踩点的视觉落点。
     """
     blk = max(1, int(sr * 0.01))                    # 10ms 一块
     n = y.size // blk
@@ -255,8 +259,12 @@ def peaks_builtin(y, sr, sensitivity):
     cand = (env > thr) & _local_maxima(env, radius) & \
            ((env - _local_min(env, radius)) > prom)
     idx = np.nonzero(cand)[0]
-    times = _frame_times(idx, blk, sr, blk / 2.0)
-    return times.tolist(), env[idx]
+    # 峰值时刻
+    peak_times = _frame_times(idx, blk, sr, blk / 2.0)
+    # 标记到峰值前两帧（30fps，每帧 1/30 秒），峰值本身不标记
+    frame = 1.0 / 30.0
+    times = [max(0.0, t - 2.0 * frame) for t in peak_times]
+    return times, env[idx]
 
 
 def analyze(pcm, sr, algo, sensitivity, min_gap_s, offset_ms):
